@@ -1,21 +1,26 @@
-name: OCI Auto-Retry
+name: OCI Auto-Retry C
+
 on:
   schedule:
-    - cron: '*/5 * * * *' # Har 5 minute mein try karega
-  workflow_dispatch:
+    - cron: "4-59/5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: oci-retry-terraform-lock
+  cancel-in-progress: false
 
 jobs:
   retry:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
-        
+
       - name: Terraform Init
         run: terraform init
-        
+
       - name: Terraform Apply
         env:
           TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
@@ -30,6 +35,4 @@ jobs:
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           terraform apply -auto-approve
-          
-          # Agar upar wali command successful hui (Server ban gaya), toh ye Telegram message chala jayega.
-          curl -s -X POST https://api.telegram.org/bot$BOT_TOKEN/sendMessage -d chat_id=$CHAT_ID -d text="✅ OCI Instance (2 OCPU / 12GB RAM) Successfully Created in Mumbai Region!"
+          curl -s -X POST https://api.telegram.org/bot$BOT_TOKEN/sendMessage -d chat_id=$CHAT_ID -d text="✅ OCI Instance Created! (via Workflow C)"
